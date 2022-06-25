@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import MoviesList from "./components/MoviesList";
-import "./App.module.css";
+import AddMovie from "./components/AddMovie";
+import "./App.css";
 
 function App() {
   const [movies, setMovies] = useState([]);
@@ -12,23 +13,35 @@ function App() {
     setIsError(null);
 
     try {
-      const response = await fetch("https://swapi.dev/api/films");
+      const response = await fetch(
+        "https://react-honkers-default-rtdb.firebaseio.com/movielist.json"
+      );
+
       if (!response.ok) {
         throw new Error("Lmao, we have messed up our backend (Comeback later)");
       }
       const data = await response.json();
       //   console.log(data);
 
-      const transformedMovies = data.results.map((movieData) => {
-        return {
-          id: movieData.episode_id,
-          title: movieData.title,
-          releaseDate: movieData.release_date,
-          openingText: movieData.opening_crawl,
-        };
-      });
-      // console.log(transformedMovies);
-      setMovies(transformedMovies);
+      const loadedMovies = [];
+      for (const key in data) {
+        // console.log(key);
+        loadedMovies.push({
+          ...data[key],
+          id: key,
+        });
+
+        //or this way:
+        // loadedMovies.push({
+        //   id: key,
+        //   title: data[key].title,
+        //   openingText: data[key].openingText,
+        //   releaseDate: data[key].releaseDate,
+        // });
+      }
+
+      //   console.log(loadedMovies);
+      setMovies(loadedMovies);
     } catch (error) {
       setIsError(error.message);
     }
@@ -38,6 +51,23 @@ function App() {
   useEffect(() => {
     fetchMovieHandler();
   }, [fetchMovieHandler]);
+
+  const addMovieHandler = async (movie) => {
+    // console.log(movie);
+    const response = await fetch(
+      "https://react-honkers-default-rtdb.firebaseio.com/movielist.json",
+      {
+        method: "POST",
+        body: JSON.stringify(movie),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const data = await response.json();
+    console.log(data);
+  };
 
   let content = <h1>Please Fetch To see The MoviesList</h1>;
 
@@ -55,6 +85,9 @@ function App() {
 
   return (
     <React.Fragment>
+      <section>
+        <AddMovie onAddMovie={addMovieHandler} />
+      </section>
       <section>
         <button onClick={fetchMovieHandler}>FetchYourMovieList</button>
       </section>
